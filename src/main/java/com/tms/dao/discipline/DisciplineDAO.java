@@ -15,29 +15,17 @@ import java.util.List;
 
 public class DisciplineDAO extends ConnectionDAO implements Disciplinable, Getable {
 
-    @Override
+   @Override
     public void save(Discipline discipline) {
         try {
             if (discipline != null) {
-                connection.setAutoCommit(false);
                 PreparedStatement preparedStatement = connection.prepareStatement("insert into discipline values(default,?)");
                 preparedStatement.setString(1, discipline.getName());
                 preparedStatement.execute();
             }
-            connection.commit();
+            connection.close();
         } catch (SQLException throwables) {
             throwables.printStackTrace();
-            try {
-                connection.rollback();
-            } catch (SQLException throwable) {
-                throwable.printStackTrace();
-            }
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
         }
     }
 
