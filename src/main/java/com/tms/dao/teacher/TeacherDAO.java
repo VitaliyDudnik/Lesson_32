@@ -19,47 +19,36 @@ public class TeacherDAO extends ConnectionDAO implements Employee, Getable {
     @Override
     public void save(Teacher teacher) {
         try {
-            connection.setAutoCommit(false);
-            PreparedStatement preparedStatement = connection.prepareStatement("insert into Teacher values(default,?,?,?) returning id");
+
+            String sql = "insert into Teacher values(default,?,?,?) returning id, teacher_name";
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
             preparedStatement.setString(1, teacher.getName());
             preparedStatement.setString(2, teacher.getUsername());
             preparedStatement.setString(3, teacher.getPassword());
             ResultSet resultSet = preparedStatement.executeQuery();
             resultSet.next();
+
             int teacherId = resultSet.getInt(1);
-            connection.commit();
+            String teacherName = resultSet.getString(2);
+            Teacher teacher1 = new Teacher(teacherId, teacherName);
+            connection.close();
 
-            //getting discipline ID from discipline DAO by teacher's main subject
-            String teacherDiscipline = teacher.getDiscipline();
-            int disciplineId = disciplineDAO.getIdByName(teacherDiscipline);
+            // adding new teacher ID with discipline ID into table TD
+            addTeacherIdDiscId(teacher1, teacher.getDiscipline());
 
-            PreparedStatement preparedStatement2 = connection.prepareStatement("insert into td values(?,?)");
-            preparedStatement2.setInt(1, teacherId);
-            preparedStatement2.setInt(2, disciplineId);
-            preparedStatement2.execute();
-            connection.commit();
         } catch (SQLException throwables) {
-            try {
-                connection.rollback();
-            } catch (SQLException throwable) {
-                throwable.printStackTrace();
+           throwables.printStackTrace();
             }
-        } finally {
-            try {
-                connection.setAutoCommit(true);
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
-        }
     }
 
-    @Override
+     @Override
     public void addTeacherIdDiscId(Teacher teacher, String discipline) {
         try {
             if (teacher != null & !discipline.trim().isEmpty()) {
 
                 //getting discipline id from discipline DAO
                 int disciplineId = disciplineDAO.getIdByName(discipline);
+
                 PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO td VALUES(?,?)");
                 preparedStatement.setInt(1, teacher.getId());
                 preparedStatement.setInt(2, disciplineId);
